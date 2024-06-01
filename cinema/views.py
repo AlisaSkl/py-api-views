@@ -21,12 +21,14 @@ class MovieViewSet(
     serializer_class = MovieSerializer
 
 
-class CinemaHallList(generics.ListCreateAPIView):
-    queryset = CinemaHall.objects.all()
-    serializer_class = CinemaHallSerializer
-
-
-class CinemaHallDetail(generics.RetrieveUpdateDestroyAPIView):
+class CinemaHallViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
 
@@ -43,7 +45,7 @@ class ActorList(
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs) -> Response:
-        return self.create(self, request, *args, **kwargs)
+        return self.create(request, *args, **kwargs)
 
 
 class ActorDetail(
@@ -61,6 +63,9 @@ class ActorDetail(
 
     def put(self, request, *args, **kwargs) -> Response:
         return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs) -> Response:
+        return self.partial_update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs) -> Response:
         return self.destroy(self, request, *args, **kwargs)
@@ -92,6 +97,13 @@ class GenreDetail(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+    def patch(self, request, pk: int) -> Response:
+        genre = self.get_object(pk=pk)
+        serializer = GenreSerializer(genre, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk: int) -> Response:
         self.get_object(pk=pk).delete()
